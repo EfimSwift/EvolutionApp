@@ -12,7 +12,7 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
     let profileImageView = UIImageView()
     let selectPhotoButton = UIButton(type: .system)
     let continueButton = UIButton(type: .system)
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
@@ -43,7 +43,7 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
         continueButton.backgroundColor = .systemBlue
         continueButton.layer.cornerRadius = 10
         continueButton.translatesAutoresizingMaskIntoConstraints = false
-        continueButton.addTarget(self, action: #selector(continueButtonTapped), for: .touchUpInside)
+        continueButton.addTarget(self, action: #selector(continueTapped), for: .touchUpInside)
         view.addSubview(continueButton)
         
     }
@@ -93,9 +93,12 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
         
     }
     
-    @objc func continueButtonTapped() {
-        print("tapped")
-//        navigationController?.pushViewController(AccountView(), animated: true)
+    @objc func continueTapped() {
+        let tabBarController = TabBarController()
+        tabBarController.selectedIndex = 0
+        if let navigationController = navigationController {
+            navigationController.setViewControllers([tabBarController], animated: true)
+        }
     }
     
     //MARK: - imagePickerController delegate
