@@ -11,16 +11,22 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
     
     private let tableView = UITableView()
     private let createPlaylistButton = UIButton()
-    private var playlists: [String] = []
+    private var playlists: [Playlist] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemOrange
         title = "Плейлист"
         
-        loadPlaylist()
+        loadPlaylists()
         setupUI()
         setupConstraints()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadPlaylists()
+        tableView.reloadData()
     }
     
     func setupUI() {
@@ -59,15 +65,15 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.textLabel?.text = playlists[indexPath.row]
+        cell.textLabel?.text = playlists[indexPath.row].name
         return cell
     }
     
     //MARK: - tableView Delegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let playlistName = playlists[indexPath.row]
-        let playlistDetailView = PlaylistDetailView(playlistName: playlistName)
+        let playlist = playlists[indexPath.row]
+        let playlistDetailView = PlaylistDetailView(playlist: playlist)
         navigationController?.pushViewController(playlistDetailView, animated: true)
     }
     
@@ -82,6 +88,7 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
     //MARK: - Selectors
     @objc func createPlaylistTapped() {
         let alert = UIAlertController(title: "Новый плейлист", message: "Введите название плейлиста", preferredStyle: .alert)
+        
         alert.addTextField { textField in
             textField.placeholder = "Название плейлиста"
         }
@@ -92,13 +99,13 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
                 return
             }
             
-            self.playlists.append(playlistName)
+            let newPlaylist = Playlist(name: playlistName, tracks: [])
+            self.playlists.append(newPlaylist)
             self.savePlaylists()
             self.tableView.reloadData()
         }
         
         let cancelAction = UIAlertAction(title: "Отмена", style: .cancel, handler: nil)
-        
         alert.addAction(createAction)
         alert.addAction(cancelAction)
         present(alert, animated: true, completion: nil)
@@ -106,13 +113,19 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
     
     //MARK: - persistence
     func savePlaylists() {
-        UserDefaults.standard.set(playlists, forKey: "playlists")
-        UserDefaults.standard.synchronize()
+        let encoder = JSONEncoder()
+        if let encoded = try? encoder.encode(playlists) {
+            UserDefaults.standard.set(encoded, forKey: "playlists")
+            UserDefaults.standard.synchronize()
+        }
     }
     
-    func loadPlaylist() {
-        if let savedPlaylists = UserDefaults.standard.array(forKey: "playlists") as? [String] {
-            playlists = savedPlaylists
+    func loadPlaylists() {
+        if let savedData = UserDefaults.standard.data(forKey: "playlists"),
+           let decoded = try? JSONDecoder().decode([Playlist].self, from: savedData) {
+            playlists = decoded
+        } else {
+            playlists = []
         }
     }
     

@@ -8,12 +8,11 @@
 import UIKit
 
 class PlaylistDetailView: UIViewController {
-    private let playlistName: String
+    private var playlist: Playlist
     private let tableView = UITableView()
-    private let songs = ["Песня 1", "Песня 2", "Песня 3"] 
     
-    init(playlistName: String) {
-        self.playlistName = playlistName
+    init(playlist: Playlist) {
+        self.playlist = playlist
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -24,7 +23,7 @@ class PlaylistDetailView: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
-        title = playlistName
+        title = playlist.name
         
         setupTableView()
         setupConstraints()
@@ -45,16 +44,49 @@ class PlaylistDetailView: UIViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
+    
+    func savePlaylists(playlists: [Playlist]) {
+        let encoder = JSONEncoder()
+        if let encoded = try? encoder.encode(playlists) {
+            UserDefaults.standard.set(encoded, forKey: "playlists")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    func loadPlaylists() -> [Playlist] {
+        if let savedData = UserDefaults.standard.data(forKey: "playlists"),
+           let decoded = try? JSONDecoder().decode([Playlist].self, from: savedData) {
+            return decoded
+        }
+        return []
+    }
 }
 
 extension PlaylistDetailView: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return songs.count
+        return playlist.tracks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.textLabel?.text = songs[indexPath.row]
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+        let track = playlist.tracks[indexPath.row]
+        cell.textLabel?.text = track.title
+        cell.detailTextLabel?.text = track.artist
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            playlist.tracks.remove(at: indexPath.row)
+            
+            var playlists = loadPlaylists()
+            
+            if let index = playlists.firstIndex(where: { $0.name == playlist.name }) {
+                playlists[index] = playlist
+                savePlaylists(playlists: playlists)
+            }
+            
+            tableView.deleteRows(at: [indexPath], with: .automatic)
+        }
     }
 }
