@@ -141,6 +141,7 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
             if let selectedImage = info[.originalImage] as? UIImage {
                 profileImageView.image = selectedImage
                 saveImageToUserDefaults(image: selectedImage)
+                addPhotoToUserPhotos(image: selectedImage)
             }
             dismiss(animated: true, completion: nil)
         }
@@ -155,6 +156,22 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
             UserDefaults.standard.set(imageData, forKey: "UserProfilePhoto")
             UserDefaults.standard.synchronize()
         }
+    }
+    
+    func addPhotoToUserPhotos(image: UIImage) {
+        if let imageData = image.jpegData(compressionQuality: 1.0) {
+            var userPhotos = loadUserPhotos()
+            userPhotos.append(imageData)
+            UserDefaults.standard.set(userPhotos, forKey: "UserPhotos")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    func loadUserPhotos() -> [Data] {
+        if let savedPhotos = UserDefaults.standard.array(forKey: "UserPhotos") as? [Data] {
+            return savedPhotos
+        }
+        return []
     }
     
     //MARK: - alert

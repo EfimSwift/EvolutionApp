@@ -96,8 +96,11 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
     @objc func continueTapped() {
         let tabBarController = TabBarController()
         tabBarController.selectedIndex = 0
-        if let navigationController = navigationController {
-            navigationController.setViewControllers([tabBarController], animated: true)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController = tabBarController
+            window.makeKeyAndVisible()
         }
     }
     
@@ -106,6 +109,7 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
         if let selectedImage = info[.originalImage] as? UIImage {
             profileImageView.image = selectedImage
             saveImageToUserDefaults(image: selectedImage)
+            addPhotoToUserPhotos(image: selectedImage)
         }
         
         dismiss(animated: true, completion: nil)
@@ -120,6 +124,22 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
+    }
+    
+    func addPhotoToUserPhotos(image: UIImage) {
+        if let imageData = image.jpegData(compressionQuality: 1.0) {
+            var userPhotos = loadUserPhotos()
+            userPhotos.append(imageData)
+            UserDefaults.standard.set(userPhotos, forKey: "UserPhotos")
+            UserDefaults.standard.synchronize()
+        }
+    }
+    
+    func loadUserPhotos() -> [Data] {
+        if let savedPhotos = UserDefaults.standard.array(forKey: "UserPhotos") as? [Data] {
+            return savedPhotos
+        }
+        return []
     }
 }
 
