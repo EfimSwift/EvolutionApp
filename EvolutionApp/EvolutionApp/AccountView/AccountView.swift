@@ -11,6 +11,7 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
     
     let profileImageView = UIImageView()
     let changePhotoButton = UIButton(type: .system)
+    let logoutButton = UIButton(type: .system)
     let innerTabBar = UITabBar()
     var currentViewController: UIViewController?
     
@@ -40,6 +41,14 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
         changePhotoButton.translatesAutoresizingMaskIntoConstraints = false
         changePhotoButton.addTarget(self, action: #selector(changePhotoTapped), for: .touchUpInside)
         view.addSubview(changePhotoButton)
+        //MARK: - logoutButton
+        logoutButton.setTitle("Log out", for: .normal)
+        logoutButton.setTitleColor(.white, for: .normal)
+        logoutButton.backgroundColor = .systemRed
+        logoutButton.layer.cornerRadius = 10
+        logoutButton.translatesAutoresizingMaskIntoConstraints = false
+        logoutButton.addTarget(self, action: #selector(logoutTapped), for: .touchUpInside)
+        view.addSubview(logoutButton)
         //MARK: - innerTabBar
         innerTabBar.delegate = self
         innerTabBar.translatesAutoresizingMaskIntoConstraints = false
@@ -58,7 +67,12 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
             changePhotoButton.widthAnchor.constraint(equalToConstant: 150),
             changePhotoButton.heightAnchor.constraint(equalToConstant: 50),
             
-            innerTabBar.topAnchor.constraint(equalTo: changePhotoButton.bottomAnchor,constant: 20),
+            logoutButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            logoutButton.topAnchor.constraint(equalTo: changePhotoButton.bottomAnchor, constant: 10),
+            logoutButton.widthAnchor.constraint(equalToConstant: 150),
+            logoutButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            innerTabBar.topAnchor.constraint(equalTo: logoutButton.bottomAnchor,constant: 20),
             innerTabBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             innerTabBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             innerTabBar.heightAnchor.constraint(equalToConstant: 50)
@@ -136,15 +150,33 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
         present(imagePicker, animated: true)
     }
     
+    //MARK: - selector logoutButton
+    @objc func logoutTapped() {
+        UserDefaults.standard.set(false, forKey: "isUserSignedUp")
+        UserDefaults.standard.removeObject(forKey: "username")
+        UserDefaults.standard.removeObject(forKey: "password")
+        UserDefaults.standard.removeObject(forKey: "UserProfilePhoto")
+        UserDefaults.standard.removeObject(forKey: "UserPhotos")
+        UserDefaults.standard.removeObject(forKey: "playlists")
+        UserDefaults.standard.synchronize()
+        
+        let navController = UINavigationController(rootViewController: ViewController())
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController = navController
+            window.makeKeyAndVisible()
+        }
+    }
+    
     //MARK: - imagePickerController delegate
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let selectedImage = info[.originalImage] as? UIImage {
-                profileImageView.image = selectedImage
-                saveImageToUserDefaults(image: selectedImage)
-                addPhotoToUserPhotos(image: selectedImage)
-            }
-            dismiss(animated: true, completion: nil)
+        if let selectedImage = info[.originalImage] as? UIImage {
+            profileImageView.image = selectedImage
+            saveImageToUserDefaults(image: selectedImage)
+            addPhotoToUserPhotos(image: selectedImage)
         }
+        dismiss(animated: true, completion: nil)
+    }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         dismiss(animated: true, completion: nil)

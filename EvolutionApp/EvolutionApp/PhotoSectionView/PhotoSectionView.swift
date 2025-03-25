@@ -14,8 +14,8 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         let layout = UICollectionViewFlowLayout()
-        layout.minimumInteritemSpacing = 10
-        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 0
+        layout.minimumLineSpacing = 0
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
     }
@@ -53,8 +53,8 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10)
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0)
         ])
     }
     
@@ -83,6 +83,9 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
         imageView.clipsToBounds = true
         imageView.image = photos[indexPath.item]
         cell.contentView.addSubview(imageView)
+        
+        cell.contentView.layer.borderWidth = 1
+        cell.contentView.layer.borderColor = UIColor.systemGray.cgColor
         return cell
     }
     
@@ -111,7 +114,7 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
     
     //MARK: - UICollectionViewDelegateFlowLayout
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.bounds.width - 20) / 3
+        let width = collectionView.bounds.width / 3
         return CGSize(width: width, height: width)
     }
     
