@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData
 
 class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITabBarDelegate {
     
@@ -127,10 +128,20 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
     
     //MARK: - loadProfilePhoto
     func loadProfilePhoto() {
-        if let imageData = UserDefaults.standard.data(forKey: "UserProfilePhoto"),
-           let loadedImage = UIImage(data: imageData) {
-            profileImageView.image = loadedImage
-        } else {
+        let context = CoreDataStack.shared.context
+        let fetchRequest: NSFetchRequest<Photos> = Photos.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        fetchRequest.fetchLimit = 1
+        
+        do {
+            let photos = try context.fetch(fetchRequest)
+            if let lastPhoto = photos.first, let imageData = lastPhoto.imageData, let image = UIImage(data: imageData) {
+                profileImageView.image = image
+            } else {
+                profileImageView.image = UIImage(systemName: "person.fill")
+            }
+        } catch {
+            print("Error fetching profile photo: \(error)")
             profileImageView.image = UIImage(systemName: "person.fill")
         }
     }
@@ -152,12 +163,27 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
     
     //MARK: - selector logoutButton
     @objc func logoutTapped() {
+        let context = CoreDataStack.shared.context
+        let photoRequest: NSFetchRequest<Photos> = Photos.fetchRequest()
+        let playlistRequest: NSFetchRequest<Album> = Album.fetchRequest()
+        
+        do {
+            let photos = try context.fetch(photoRequest)
+            let playlists = try context.fetch(playlistRequest)
+            for photo in photos {
+                context.delete(photo)
+            }
+            for playlist in playlists {
+                context.delete(playlist)
+            }
+            CoreDataStack.shared.saveContext()
+        } catch {
+            print("Error clearing data: \(error)")
+        }
+        
         UserDefaults.standard.set(false, forKey: "isUserSignedUp")
-        UserDefaults.standard.removeObject(forKey: "username")
+        UserDefaults.standard.removeObject(forKey: Constants.shared.userName)
         UserDefaults.standard.removeObject(forKey: "password")
-        UserDefaults.standard.removeObject(forKey: "UserProfilePhoto")
-        UserDefaults.standard.removeObject(forKey: "UserPhotos")
-        UserDefaults.standard.removeObject(forKey: "playlists")
         UserDefaults.standard.synchronize()
         
         let navController = UINavigationController(rootViewController: ViewController())
@@ -172,8 +198,7 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let selectedImage = info[.originalImage] as? UIImage {
             profileImageView.image = selectedImage
-            saveImageToUserDefaults(image: selectedImage)
-            addPhotoToUserPhotos(image: selectedImage)
+            saveImageToCoreData(image: selectedImage)
         }
         dismiss(animated: true, completion: nil)
     }
@@ -182,28 +207,18 @@ class AccountView: UIViewController, UITabBarControllerDelegate, UIImagePickerCo
         dismiss(animated: true, completion: nil)
     }
     
-    //MARK: - UserDefaults
-    func saveImageToUserDefaults(image: UIImage) {
-        if let imageData = image.jpegData(compressionQuality: 1.0) {
-            UserDefaults.standard.set(imageData, forKey: "UserProfilePhoto")
-            UserDefaults.standard.synchronize()
-        }
-    }
-    
-    func addPhotoToUserPhotos(image: UIImage) {
-        if let imageData = image.jpegData(compressionQuality: 1.0) {
-            var userPhotos = loadUserPhotos()
-            userPhotos.append(imageData)
-            UserDefaults.standard.set(userPhotos, forKey: "UserPhotos")
-            UserDefaults.standard.synchronize()
-        }
-    }
-    
-    func loadUserPhotos() -> [Data] {
-        if let savedPhotos = UserDefaults.standard.array(forKey: "UserPhotos") as? [Data] {
-            return savedPhotos
-        }
-        return []
+    //MARK: - CoreData
+    func saveImageToCoreData(image: UIImage) {
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else { return }
+        
+        let context = CoreDataStack.shared.context
+        let photo = Photos(context: context)
+        photo.imageData = imageData
+        photo.createdAt = Date()
+        
+        CoreDataStack.shared.saveContext()
+        
+        NotificationCenter.default.post(name: NSNotification.Name("DataDidChange"), object: nil)
     }
     
     //MARK: - alert

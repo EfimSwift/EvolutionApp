@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		CEC7D8ED2D831EE6007FFB17 /* Exceptions for "EvolutionApp" folder in "EvolutionApp" target */ = {
+		CEB5E6172D947C4300679B21 /* Exceptions for "EvolutionApp" folder in "EvolutionApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -21,10 +21,10 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CEC7D8DD2D831EE4007FFB17 /* EvolutionApp */ = {
+		CEB5E6062D947C4300679B21 /* EvolutionApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				CEC7D8ED2D831EE6007FFB17 /* Exceptions for "EvolutionApp" folder in "EvolutionApp" target */,
+				CEB5E6172D947C4300679B21 /* Exceptions for "EvolutionApp" folder in "EvolutionApp" target */,
 			);
 			path = EvolutionApp;
 			sourceTree = "<group>";
@@ -45,7 +45,7 @@
 		CEC7D8D22D831EE4007FFB17 = {
 			isa = PBXGroup;
 			children = (
-				CEC7D8DD2D831EE4007FFB17 /* EvolutionApp */,
+				CEB5E6062D947C4300679B21 /* EvolutionApp */,
 				CEC7D8DC2D831EE4007FFB17 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -74,7 +74,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CEC7D8DD2D831EE4007FFB17 /* EvolutionApp */,
+				CEB5E6062D947C4300679B21 /* EvolutionApp */,
 			);
 			name = EvolutionApp;
 			packageProductDependencies = (

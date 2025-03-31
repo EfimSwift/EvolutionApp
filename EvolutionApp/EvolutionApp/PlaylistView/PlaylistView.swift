@@ -6,26 +6,33 @@
 //
 
 import UIKit
+import CoreData
 
 class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     private let tableView = UITableView()
     private let createPlaylistButton = UIButton()
-    private var playlists: [Playlist] = []
+    private var albums: [Album] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemOrange
         title = "Плейлист"
         
-        loadPlaylists()
+        loadAlbums()
         setupUI()
         setupConstraints()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: NSNotification.Name("DataDidChange"), object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        loadPlaylists()
+        loadAlbums()
         tableView.reloadData()
     }
     
@@ -58,34 +65,44 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
         ])
     }
     
-    //MARK: - tableView DataSource
+    // MARK: - tableView DataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return playlists.count
+        return albums.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.textLabel?.text = playlists[indexPath.row].name
+        cell.textLabel?.text = albums[indexPath.row].name
         return cell
     }
     
-    //MARK: - tableView Delegate
+    // MARK: - tableView Delegate
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let playlist = playlists[indexPath.row]
-        let playlistDetailView = PlaylistDetailView(playlist: playlist)
+        let album = albums[indexPath.row]
+        let playlistDetailView = PlaylistDetailView(album: album)
         navigationController?.pushViewController(playlistDetailView, animated: true)
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            playlists.remove(at: indexPath.row)
-            savePlaylists()
-            tableView.deleteRows(at: [indexPath], with: .automatic)
+            let context = CoreDataStack.shared.context
+            let albumToDelete = albums[indexPath.row]
+            context.delete(albumToDelete)
+            
+            do {
+                try CoreDataStack.shared.saveContext()
+                albums.remove(at: indexPath.row)
+                tableView.deleteRows(at: [indexPath], with: .automatic)
+                NotificationCenter.default.post(name: NSNotification.Name("DataDidChange"), object: nil)
+            } catch {
+                print("Error saving context after deletion: \(error)")
+                showAlert(message: "Failed to delete playlist: \(error.localizedDescription)")
+            }
         }
     }
     
-    //MARK: - Selectors
+    // MARK: - Selectors
     @objc func createPlaylistTapped() {
         let alert = UIAlertController(title: "Новый плейлист", message: "Введите название плейлиста", preferredStyle: .alert)
         
@@ -99,10 +116,20 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
                 return
             }
             
-            let newPlaylist = Playlist(name: playlistName, tracks: [])
-            self.playlists.append(newPlaylist)
-            self.savePlaylists()
-            self.tableView.reloadData()
+            let context = CoreDataStack.shared.context
+            let newAlbum = Album(context: context)
+            newAlbum.name = playlistName
+            newAlbum.createdAt = Date()
+            
+            do {
+                try CoreDataStack.shared.saveContext()
+                self.loadAlbums()
+                self.tableView.reloadData()
+                NotificationCenter.default.post(name: NSNotification.Name("DataDidChange"), object: nil)
+            } catch {
+                print("Error saving new album: \(error)")
+                self.showAlert(message: "Failed to create playlist: \(error.localizedDescription)")
+            }
         }
         
         let cancelAction = UIAlertAction(title: "Отмена", style: .cancel, handler: nil)
@@ -111,25 +138,26 @@ class PlaylistView: UIViewController, UITableViewDelegate, UITableViewDataSource
         present(alert, animated: true, completion: nil)
     }
     
-    //MARK: - persistence
-    func savePlaylists() {
-        let encoder = JSONEncoder()
-        if let encoded = try? encoder.encode(playlists) {
-            UserDefaults.standard.set(encoded, forKey: "playlists")
-            UserDefaults.standard.synchronize()
+    @objc func dataDidChange() {
+        loadAlbums()
+        tableView.reloadData()
+    }
+    
+    // MARK: - persistence
+    func loadAlbums() {
+        let context = CoreDataStack.shared.context
+        let fetchRequest: NSFetchRequest<Album> = Album.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        
+        do {
+            albums = try context.fetch(fetchRequest)
+        } catch {
+            print("Error fetching albums: \(error)")
+            showAlert(message: "Failed to load playlists: \(error.localizedDescription)")
         }
     }
     
-    func loadPlaylists() {
-        if let savedData = UserDefaults.standard.data(forKey: "playlists"),
-           let decoded = try? JSONDecoder().decode([Playlist].self, from: savedData) {
-            playlists = decoded
-        } else {
-            playlists = []
-        }
-    }
-    
-    //MARK: - alert
+    // MARK: - alert
     func showAlert(message: String) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
