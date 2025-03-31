@@ -210,8 +210,8 @@ class ViewController: UIViewController, UITextFieldDelegate {
     //MARK: - проверка на правильно введеные данные
     func checkUserData() {
         let defaults = UserDefaults.standard
-        let savedEmail = defaults.string(forKey: "userEmail")
-        let savedPassword = defaults.string(forKey: "userPassword")
+        let savedEmail = defaults.string(forKey: Constants.shared.userName)
+        let savedPassword = defaults.string(forKey: Constants.shared.createPassword)
         guard let inputEmail = loginTextField.text, !inputEmail.isEmpty,
               let inputPassword = passwordTextField.text, !inputPassword.isEmpty else {
             showAlert(massega: "введите ваш email и пароль")

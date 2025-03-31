@@ -57,7 +57,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         ])
     }
     
-    //MARK: create confirmRegistrationButton
+    //MARK: - create confirmRegistrationButton
     func createconfirmRegistrationButton() {
         confirmRegistrationButton = UIButton(type: .roundedRect)
         confirmRegistrationButton.backgroundColor = UIColor.blue
@@ -69,7 +69,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         view.addSubview(confirmRegistrationButton)
     }
     
-    //MARK: Create Password
+    //MARK: - Create Password
     func createTextFieldPassword() {
         createPassword.borderStyle = .roundedRect
         createPassword.textAlignment = .center
@@ -81,7 +81,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         createPassword.addTarget(self, action: #selector(createPasswordTextField), for: .editingChanged)
     }
     
-    //MARK: Create nameTextField
+    //MARK: - Create nameTextField
     func createNameTextField() {
         nameTextField.borderStyle = .roundedRect
         nameTextField.textAlignment = .center
@@ -92,7 +92,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         nameTextField.addTarget(self, action: #selector(validateLoginField), for: .editingChanged)
     }
     
-    //MARK: Create lastNameTextField
+    //MARK: - Create lastNameTextField
     func createLastNameTextField() {
         lastNameTextField.borderStyle = .roundedRect
         lastNameTextField.textAlignment = .center
@@ -103,7 +103,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         lastNameTextField.addTarget(self, action: #selector(validateLastNameField), for: .editingChanged)
     }
     
-    //MARK: Create emailTextField
+    //MARK: - Create emailTextField
     func createEmailTextField() {
         emailTextField.borderStyle = .roundedRect
         emailTextField.textAlignment = .center
@@ -114,7 +114,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         emailTextField.addTarget(self, action: #selector(validateMailField), for: .editingChanged)
     }
     
-    //MARK: Create gender
+    //MARK: - Create gender
     func createGender() {
         genderSegmentControl = UISegmentedControl(items: genderArray)
         genderSegmentControl.backgroundColor = .white
@@ -123,7 +123,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         genderSegmentControl.addTarget(self, action: #selector(genderSelected), for: .valueChanged)
     }
     
-    //MARK: Create agePicker
+    //MARK: - Create agePicker
     func createAgePicker() {
         agePicker.backgroundColor = .clear
         agePicker.datePickerMode = .date
@@ -141,7 +141,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         agePicker.addTarget(self, action: #selector(dataPickerChangeValue), for: .valueChanged)
     }
     
-    //MARK: Create ageLabel
+    //MARK: - Create ageLabel
     func createAgeLabel() {
         enterAgeLabel = UILabel()
         enterAgeLabel.numberOfLines = 1
@@ -151,7 +151,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         view.addSubview(enterAgeLabel)
     }
     
-    //MARK: Constraints
+    //MARK: - Constraints
     func activeConstraints() {
         NSLayoutConstraint.activate([
             nameTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -194,7 +194,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         ])
     }
     
-    //MARK: Selector nameTextField
+    //MARK: - Selector nameTextField
     @objc func validateLoginField() {
         if nameTextField.text?.isEmpty == true {
             nameTextField.layer.borderColor = UIColor.systemRed.cgColor
@@ -203,7 +203,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         }
     }
     
-    //MARK: selector lastNameTextField
+    //MARK: - selector lastNameTextField
     @objc func validateLastNameField() {
         if lastNameTextField.text?.isEmpty == true {
             lastNameTextField.layer.borderColor = UIColor.systemRed.cgColor
@@ -212,7 +212,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         }
     }
     
-    //MARK: selector mailTextField
+    //MARK: - selector mailTextField
     @objc func validateMailField() {
         if emailTextField.text?.isEmpty == true {
             emailTextField.layer.borderColor = UIColor.systemRed.cgColor
@@ -221,7 +221,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         }
     }
     
-    //MARK: Selector genderSegmentControl
+    //MARK: - Selector genderSegmentControl
     @objc func genderSelected(target: UISegmentedControl) {
         if target == genderSegmentControl {
             let sigmentIndex = target.selectedSegmentIndex
@@ -229,19 +229,19 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         }
     }
     
-    //MARK: Selector ageDataPicker
+    //MARK: - Selector ageDataPicker
     @objc func dataPickerChangeValue(param: UIDatePicker) {
         if param.isEqual(agePicker) {
             print("dataChange : = \(param.date)")
         }
     }
     
-    //MARK: Selector tapGestureRecognizer
+    //MARK: - Selector tapGestureRecognizer
     @objc func dismissKeyboard() {
         view.endEditing(true)
     }
     
-    //MARK: Selectoк createPasswordTextField
+    //MARK: - Selectoк createPasswordTextField
     @objc func createPasswordTextField() {
         if createPassword.text?.isEmpty == true {
             createPassword.layer.borderColor = UIColor.systemRed.cgColor
@@ -250,7 +250,7 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         }
     }
     
-    //MARK: selector confirmRegistrationButton
+    //MARK: - selector confirmRegistrationButton
     @objc func confirmButtonIsPressed(sender: UIButton) {
         print("Confirm button pressed")
     }
@@ -263,20 +263,20 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         navigationController?.popToRootViewController(animated: true)
     }
     
-    //MARK: Method
+    //MARK: - Method
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
     }
     
-    //MARK: ограничение ввода только английскими буквами
+    //MARK: - ограничение ввода только английскими буквами
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         let allowedCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@._-"
         let characterSet = CharacterSet(charactersIn: allowedCharacters)
         return string.rangeOfCharacter(from: characterSet) != nil || string.isEmpty
     }
     
-    //MARK: проверка на заполненые поля
+    //MARK: - проверка на заполненые поля
     func validateFields() -> Bool {
         if nameTextField.text?.isEmpty == true ||
             lastNameTextField.text?.isEmpty == true ||
@@ -308,21 +308,21 @@ class RegistrationView: UIViewController, UITextFieldDelegate {
         present(alert, animated: true, completion: nil)
     }
     
-    //MARK: adding UserDefaults
+    //MARK: - adding UserDefaults
     func saveUserData() {
         let defaults = UserDefaults.standard
-        defaults.set(nameTextField.text, forKey: "userName")
-        defaults.set(lastNameTextField.text, forKey: "userLastName")
-        defaults.set(emailTextField.text, forKey: "userEmail")
-        defaults.set(createPassword.text, forKey: "userPassword")
+        defaults.set(nameTextField.text, forKey: Constants.shared.userName)
+        defaults.set(lastNameTextField.text, forKey: Constants.shared.userLastName)
+        defaults.set(emailTextField.text, forKey: Constants.shared.emailTextField)
+        defaults.set(createPassword.text, forKey: Constants.shared.createPassword)
         
         if genderSegmentControl.selectedSegmentIndex >= 0 {
             let selectedGender = genderArray[genderSegmentControl.selectedSegmentIndex]
-            defaults.set(selectedGender, forKey: "userGender")
+            defaults.set(selectedGender, forKey: Constants.shared.selectedGender)
         }
         
         let birthDate = agePicker.date.timeIntervalSince1970
-        defaults.set(birthDate, forKey: "userBirthDate")
+        defaults.set(birthDate, forKey: Constants.shared.berthDate)
         defaults.synchronize()
     }
 }

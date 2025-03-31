@@ -6,11 +6,12 @@
 //
 
 import UIKit
+import CoreData
 
 class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     private let collectionView: UICollectionView
-    private var photos: [UIImage] = []
+    private var photos: [Photos] = []
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         let layout = UICollectionViewFlowLayout()
@@ -31,11 +32,17 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
         loadPhotos()
         setupUI()
         setupConstraints()
+        
+        // Подписываемся на уведомления об изменениях
+        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: NSNotification.Name("DataDidChange"), object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
         loadPhotos()
         collectionView.reloadData()
     }
@@ -59,18 +66,23 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
     }
     
     func loadPhotos() {
-        let photoDataArray = loadUserPhotos()
-        photos = photoDataArray.compactMap { UIImage(data: $0) }
-    }
-    
-    func loadUserPhotos() -> [Data] {
-        if let savedPhotos = UserDefaults.standard.array(forKey: "UserPhotos") as? [Data] {
-            return savedPhotos
+        let context = CoreDataStack.shared.context
+        let fetchRequest: NSFetchRequest<Photos> = Photos.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        
+        do {
+            photos = try context.fetch(fetchRequest)
+        } catch {
+            print("Error fetching photos: \(error)")
         }
-        return []
     }
     
-    //MARK: - UICollectionViewDataSource
+    @objc func dataDidChange() {
+        loadPhotos()
+        collectionView.reloadData()
+    }
+    
+    // MARK: - UICollectionViewDataSource
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return photos.count
     }
@@ -81,7 +93,12 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
         let imageView = UIImageView(frame: cell.contentView.bounds)
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.image = photos[indexPath.item]
+        
+        let photo = photos[indexPath.item]
+        if let imageData = photo.imageData, let image = UIImage(data: imageData) {
+            imageView.image = image
+        }
+        
         cell.contentView.addSubview(imageView)
         
         cell.contentView.layer.borderWidth = 1
@@ -92,30 +109,36 @@ class PhotoSectionView: UIViewController, UICollectionViewDelegate, UICollection
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             let deleteAction = UIAction(title: "Удалить", image: UIImage(systemName: "trash"), attributes: .destructive) { _ in
+                let context = CoreDataStack.shared.context
+                let photoToDelete = self.photos[indexPath.item]
+                context.delete(photoToDelete)
+                CoreDataStack.shared.saveContext()
+                
                 self.photos.remove(at: indexPath.item)
-                let photoDataArray = self.photos.compactMap { $0.jpegData(compressionQuality: 1.0) }
-                UserDefaults.standard.set(photoDataArray, forKey: "UserPhotos")
-                UserDefaults.standard.synchronize()
                 collectionView.deleteItems(at: [indexPath])
+                
+                NotificationCenter.default.post(name: NSNotification.Name("DataDidChange"), object: nil)
             }
             return UIMenu(title: "", children: [deleteAction])
         }
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let photo = photos[indexPath.item]
+        guard let imageData = photo.imageData, let image = UIImage(data: imageData) else { return }
+        
         let imageViewController = UIViewController()
-            let imageView = UIImageView(image: photos[indexPath.item])
-            imageView.contentMode = .scaleAspectFit
-            imageView.frame = imageViewController.view.bounds
-            imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            imageViewController.view.addSubview(imageView)
-            navigationController?.pushViewController(imageViewController, animated: true)
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFit
+        imageView.frame = imageViewController.view.bounds
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        imageViewController.view.addSubview(imageView)
+        navigationController?.pushViewController(imageViewController, animated: true)
     }
     
-    //MARK: - UICollectionViewDelegateFlowLayout
+    // MARK: - UICollectionViewDelegateFlowLayout
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = collectionView.bounds.width / 3
         return CGSize(width: width, height: width)
     }
-    
 }

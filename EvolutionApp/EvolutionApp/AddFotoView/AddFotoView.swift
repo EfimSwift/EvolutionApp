@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData
 
 class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
@@ -70,11 +71,19 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
     }
     
     //MARK: - methods
-    func saveImageToUserDefaults(image: UIImage) {
-        if let imageData = image.jpegData(compressionQuality: 1.0) {
-            UserDefaults.standard.set(imageData, forKey: "UserProfilePhoto")
-            UserDefaults.standard.synchronize()
-        }
+    func saveImageToCoreData(image: UIImage) {
+        guard let imageData = image.jpegData(compressionQuality: 1.0) else { return }
+        
+        let context = CoreDataStack.shared.context
+        let photo = Photos(context: context)
+        photo.imageData = imageData
+        photo.createdAt = Date()
+        
+        CoreDataStack.shared.saveContext()
+        
+        print("Photo saved to Core Data")
+        
+        NotificationCenter.default.post(name: NSNotification.Name("DataDidChange"), object: nil)
     }
     
     //MARK: - Selectors
@@ -90,7 +99,6 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
         imagePicker.delegate = self
         imagePicker.allowsEditing = false
         present(imagePicker, animated: true, completion: nil)
-        
     }
     
     @objc func continueTapped() {
@@ -108,10 +116,8 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let selectedImage = info[.originalImage] as? UIImage {
             profileImageView.image = selectedImage
-            saveImageToUserDefaults(image: selectedImage)
-            addPhotoToUserPhotos(image: selectedImage)
+            saveImageToCoreData(image: selectedImage)
         }
-        
         dismiss(animated: true, completion: nil)
     }
     
@@ -124,22 +130,6 @@ class AddFotoView: UIViewController, UIImagePickerControllerDelegate, UINavigati
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
-    }
-    
-    func addPhotoToUserPhotos(image: UIImage) {
-        if let imageData = image.jpegData(compressionQuality: 1.0) {
-            var userPhotos = loadUserPhotos()
-            userPhotos.append(imageData)
-            UserDefaults.standard.set(userPhotos, forKey: "UserPhotos")
-            UserDefaults.standard.synchronize()
-        }
-    }
-    
-    func loadUserPhotos() -> [Data] {
-        if let savedPhotos = UserDefaults.standard.array(forKey: "UserPhotos") as? [Data] {
-            return savedPhotos
-        }
-        return []
     }
 }
 
