@@ -6,15 +6,15 @@
 //
 
 import UIKit
-import CoreData
 
 class PlaylistDetailView: UIViewController, UITableViewDelegate, UITableViewDataSource {
-    private let album: Album
+    private let playlistID: String
     private let tableView = UITableView()
-    private var tracks: [Tracks] = []
+    private var playlistData: [String: Any]?
+    private var tracks: [[String: Any]] = []
     
-    init(album: Album) {
-        self.album = album
+    init(playlistID: String) {
+        self.playlistID = playlistID
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -25,17 +25,11 @@ class PlaylistDetailView: UIViewController, UITableViewDelegate, UITableViewData
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
-        title = album.name
-        
-        loadTracks()
+        title = "Loading..."
+
         setupTableView()
         setupConstraints()
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(dataDidChange), name: NSNotification.Name("DataDidChange"), object: nil)
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+        loadPlaylist()
     }
     
     func setupTableView() {
@@ -54,17 +48,28 @@ class PlaylistDetailView: UIViewController, UITableViewDelegate, UITableViewData
         ])
     }
     
-    func loadTracks() {
-        if let trackSet = album.tracks as? Set<Tracks> {
-            tracks = Array(trackSet).sorted { ($0.title ?? "") < ($1.title ?? "") }
-        } else {
-            tracks = []
+    func loadPlaylist() {
+        SpotifyManager.shared.getPlaylist(playlistID: playlistID) { [weak self] data in
+            guard let self = self else { return }
+            self.playlistData = data
+            
+            if let playlistName = data?["name"] as? String {
+                self.title = playlistName
+            } else {
+                self.title = "Unknown Playlist"
+            }
+            
+            if let tracksData = data?["tracks"] as? [String: Any],
+               let items = tracksData["items"] as? [[String: Any]] {
+                self.tracks = items
+            } else {
+                self.tracks = []
+            }
+            
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
         }
-    }
-    
-    @objc func dataDidChange() {
-        loadTracks()
-        tableView.reloadData()
     }
     
     // MARK: - UITableViewDataSource
@@ -74,23 +79,26 @@ class PlaylistDetailView: UIViewController, UITableViewDelegate, UITableViewData
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
-        let track = tracks[indexPath.row]
-        cell.textLabel?.text = track.title
-        cell.detailTextLabel?.text = track.artist
+        let trackItem = tracks[indexPath.row]
+        
+        if let track = trackItem["track"] as? [String: Any] {
+            let trackName = track["name"] as? String ?? "Unknown Track"
+            let artists = (track["artists"] as? [[String: Any]])?.compactMap { $0["name"] as? String }.joined(separator: ", ") ?? "Unknown Artist"
+            
+            cell.textLabel?.text = trackName
+            cell.detailTextLabel?.text = artists
+        } else {
+            cell.textLabel?.text = "Unknown Track"
+            cell.detailTextLabel?.text = "Unknown Artist"
+        }
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            let context = CoreDataStack.shared.context
-            let trackToDelete = tracks[indexPath.row]
-            context.delete(trackToDelete)
-            CoreDataStack.shared.saveContext()
-            
             tracks.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .automatic)
-            
-            NotificationCenter.default.post(name: NSNotification.Name("DataDidChange"), object: nil)
         }
     }
 }

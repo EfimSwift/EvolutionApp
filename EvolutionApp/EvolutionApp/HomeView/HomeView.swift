@@ -68,9 +68,17 @@ class HomeView: UIViewController, UITableViewDelegate, UITableViewDataSource {
             print("Error fetching albums: \(error)")
         }
         
+        
+        let spotifyPlaylists: [FeedItem] = [
+            .spotifyPlaylist("Today's Top Hits", "37i9dQZF1DXcBWIGoYBM5M"),
+            .spotifyPlaylist("Chill Hits", "37i9dQZF1DX4WYpdgoIcn6")
+        ]
+        
+        
         feedItems = []
         feedItems.append(contentsOf: photos.map { FeedItem.photo($0) })
         feedItems.append(contentsOf: albums.map { FeedItem.album($0) })
+        feedItems.append(contentsOf: spotifyPlaylists)
         
         feedItems.sort { $0.createdAt > $1.createdAt }
         
@@ -98,6 +106,12 @@ class HomeView: UIViewController, UITableViewDelegate, UITableViewDataSource {
             let cell = tableView.dequeueReusableCell(withIdentifier: PlaylistFeedCell.identifier, for: indexPath) as! PlaylistFeedCell
             cell.configure(with: album)
             return cell
+        case .spotifyPlaylist(let name, _):
+            let cell = tableView.dequeueReusableCell(withIdentifier: PlaylistFeedCell.identifier, for: indexPath) as! PlaylistFeedCell
+            let tempAlbum = Album(context: CoreDataStack.shared.context)
+            tempAlbum.name = name
+            cell.configure(with: tempAlbum)
+            return cell
         }
     }
     
@@ -118,7 +132,12 @@ class HomeView: UIViewController, UITableViewDelegate, UITableViewDataSource {
             navigationController?.pushViewController(imageViewController, animated: true)
             
         case .album(let album):
-            let detailView = PlaylistDetailView(album: album)
+
+            let detailView = PlaylistDetailView(playlistID: "")
+            navigationController?.pushViewController(detailView, animated: true)
+            
+        case .spotifyPlaylist(_, let playlistID):
+            let detailView = PlaylistDetailView(playlistID: playlistID)
             navigationController?.pushViewController(detailView, animated: true)
         }
         
@@ -130,7 +149,7 @@ class HomeView: UIViewController, UITableViewDelegate, UITableViewDataSource {
         switch feedItem {
         case .photo:
             return 200
-        case .album:
+        case .album, .spotifyPlaylist:
             return 80
         }
     }
@@ -140,6 +159,7 @@ class HomeView: UIViewController, UITableViewDelegate, UITableViewDataSource {
 enum FeedItem {
     case photo(Photos)
     case album(Album)
+    case spotifyPlaylist(String, String)
     
     var createdAt: Date {
         switch self {
@@ -147,6 +167,19 @@ enum FeedItem {
             return photo.createdAt ?? Date.distantPast
         case .album(let album):
             return album.createdAt ?? Date.distantPast
+        case .spotifyPlaylist:
+            return Date()
+        }
+    }
+    
+    var name: String {
+        switch self {
+        case .photo:
+            return "Photo"
+        case .album(let album):
+            return album.name ?? "Unknown Album"
+        case .spotifyPlaylist(let name, _):
+            return name
         }
     }
 }
